@@ -1,0 +1,40 @@
+workflows:
+  ios-tuist-workflow:
+    name: KaptanNotesPro iOS Build
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    build_instance_type: mac_mini_m1
+    environment:
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - push
+    scripts:
+      - name: Install Tuist and Generate Project
+        script: |
+          # Tuist aracını kuruyoruz
+          curl -Ls https://install.tuist.io | bash
+          
+          # Proje klasörüne girip Xcode projesini üretiyoruz
+          cd ios_source/ios
+          tuist generate --no-open
+      - name: CocoaPods Install
+        script: |
+          cd ios_source/ios
+          pod install
+      - name: Build iOS App (Unsigned)
+        script: |
+          cd ios_source/ios
+          xcodebuild build \
+            -workspace KaptanNotesPro.xcworkspace \
+            -scheme KaptanNotesPro \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE_REQUIRED=NO
+    artifacts:
+      - ios_source/ios/*.xcworkspace
+      - ~/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/*.app
